@@ -383,19 +383,20 @@
   pointer-events: none;
 }
 
-.lcdIcon{
-  position: absolute;
-  left: var(--x, 50%);
-  top: var(--y, 50%);
-  width: var(--w, 6%);
-  transform: translate(-50%, -50%);
-  opacity: 0;
-  z-index: 5;
-  aspect-ratio: var(--ar, 1 / 1);
-}
+    .lcdIcon{
+      position: absolute;
+      left: var(--x, 50%);
+      top: var(--y, 50%);
+      width: var(--w, 6%);
+      transform: translate(-50%, -50%);
+      opacity: 0;
+      z-index: 5;
+      aspect-ratio: var(--ar, 1 / 1);
+    }
 
-.lcdIcon.on{ opacity: 1 !important; }
-.lcdIcon.on{ visibility: visible; }
+    .lcdIcon.on{ opacity: 1 !important; }
+    .lcdIcon.on{ visibility: visible; }
+    .lcdIcon.dim{ opacity: .35 !important; visibility: visible; }
 
 .lcdIcon > svg{
   width: 100%;
@@ -1270,6 +1271,21 @@
         <div class="segDigit" data-pos="5"><svg viewBox="0 0 16.73 47.8"><use href="#live_weight_0"></use></svg></div>
       </div>
 
+      <!-- Recorded weight (left side, 5 digits, controlled by JS) -->
+      <div class="segGroup" id="rec_weight">
+        <div class="segDigit" data-pos="1"><svg viewBox="0 0 13.58 32.47"><use href="#rec_weight_0"></use></svg></div>
+        <div class="segDigit" data-pos="2"><svg viewBox="0 0 13.58 32.47"><use href="#rec_weight_0"></use></svg></div>
+        <div class="segDigit" data-pos="3"><svg viewBox="0 0 13.58 32.47"><use href="#rec_weight_0"></use></svg></div>
+        <div class="segDigit" data-pos="4"><svg viewBox="0 0 13.58 32.47"><use href="#rec_weight_0"></use></svg></div>
+        <div class="segDigit" data-pos="5"><svg viewBox="0 0 13.58 32.47"><use href="#rec_weight_0"></use></svg></div>
+      </div>
+
+      <!-- Recorded list index (left side, 2 digits, controlled by JS) -->
+      <div class="segGroup" id="rec_list">
+        <div class="segDigit" data-pos="1"><svg viewBox="0 0 6.37 14.79"><use href="#rec_list_0"></use></svg></div>
+        <div class="segDigit" data-pos="2"><svg viewBox="0 0 6.37 14.79"><use href="#rec_list_0"></use></svg></div>
+      </div>
+
       <div class="segGroup allOnDigits" id="live_weight_allon">
         <div class="segDigit"><svg viewBox="0 0 16.73 47.8"><use href="#live_weight_8"></use></svg></div>
         <div class="segDigit"><svg viewBox="0 0 16.73 47.8"><use href="#live_weight_8"></use></svg></div>
@@ -1405,7 +1421,7 @@
             </g>
 </symbol>
           <symbol id="rec_weight_1" viewBox="0 0 13.58 32.47">
-            <g transform="translate(0 0)">
+            <g transform="translate(11 1.3)">
             <path d="M2.85,27.89c0,.91-.29,1.74-.77,2.36l-2.08-2.55v-10.57l1.28-1.79,1.58,2.28v10.27Z"/>
             <path d="M0,2.55L2.09,0c.47.62.77,1.45.77,2.35v10.39l-1.58,2.19L0,13.07V2.55Z"/>
           
@@ -1504,7 +1520,7 @@
             </g>
 </symbol>
           <symbol id="rec_list_1" viewBox="0 0 6.37 14.79">
-            <g transform="translate(0 0)">
+            <g transform="translate(5 1)">
             <path d="M1.56,5.82V1.04c0-.38-.14-.75-.39-1.04L0,1.17v4.66l.78.78.78-.78Z"/>
             <path d="M1.56,7.72l-.78-.78-.78.78v4.79l1.17,1.17c.25-.29.39-.65.39-1.04v-4.92Z"/>
           
@@ -2107,9 +2123,9 @@
         <div class="row">
           <div class="field">
             <label>重量輸入 (g)</label>
-            <input id="weightInput" type="number" placeholder="0" min="0" max="10000" />
+            <input id="weightInput" type="number" placeholder="0" min="-10000" max="10000" />
           </div>
-          <input id="weightRange" type="range" min="0" max="10000" value="0" />
+          <input id="weightRange" type="range" min="-10000" max="10000" value="0" />
           <div class="hint" id="weightHint">0g / 淨重</div>
         </div>
 
@@ -2151,18 +2167,25 @@
       let rawWeightG = 0;
 
       const liveDigits = Array.from(document.querySelectorAll('#live_weight .segDigit'));
+      const recWeightDigits = Array.from(document.querySelectorAll('#rec_weight .segDigit'));
+      const recListDigits = Array.from(document.querySelectorAll('#rec_list .segDigit'));
       const weightInput = document.getElementById('weightInput');
       const weightRange = document.getElementById('weightRange');
       const weightHint = document.getElementById('weightHint');
 
-      const iconIds = [
+      const liveIconIds = [
         'live_unit_g','live_unit_lb','live_unit_oz','live_unit_fl','live_unit_ml',
-        'live_colon','live_dot01','live_dot02','icon_ingre'
+        'live_colon','live_dot01','live_dot02'
       ];
+      const recUnitIds = ['rec_unit_g','rec_unit_lb','rec_unit_oz','rec_unit_fl','rec_unit_ml'];
+      const tareIds = ['icon_tare01','icon_tare02','icon_tare03','icon_tare04','icon_tare05'];
+
+      const bowls = []; // { tareWeight: number, items: number[] }
+      let currentBowlIndex = -1;
 
       function clampWeight(val) {
         if (!Number.isFinite(val)) return 0;
-        return Math.max(0, Math.min(10000, Math.round(val)));
+        return Math.max(-10000, Math.min(10000, Math.round(val)));
       }
 
       function setIconOn(id, on) {
@@ -2172,12 +2195,19 @@
         else el.classList.remove('on');
       }
 
-      function hideAllLiveIcons() {
-        iconIds.forEach(id => setIconOn(id, false));
+      function setIconDim(id, dim) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (dim) el.classList.add('dim');
+        else el.classList.remove('dim');
       }
 
-      function setDigitAt(pos, digit, visible) {
-        const el = liveDigits[pos - 1];
+      function hideAllLiveIcons() {
+        liveIconIds.forEach(id => setIconOn(id, false));
+      }
+
+      function setDigitAt(digits, pos, digit, visible, prefix) {
+        const el = digits[pos - 1];
         if (!el) return;
         if (!visible) {
           el.style.visibility = 'hidden';
@@ -2187,51 +2217,160 @@
         el.style.visibility = 'visible';
         el.style.opacity = '1';
         const use = el.querySelector('use');
-        if (use) use.setAttribute('href', `#live_weight_${digit}`);
+        if (use) use.setAttribute('href', `#${prefix}_${digit}`);
       }
 
-      function clearLiveDigits() {
-        liveDigits.forEach((_, idx) => setDigitAt(idx + 1, 0, false));
+      function clearDigits(digits, prefix) {
+        digits.forEach((_, idx) => setDigitAt(digits, idx + 1, 0, false, prefix));
       }
 
-      function renderWeightForUnit(unit) {
-        clearLiveDigits();
-        hideAllLiveIcons();
-        setIconOn('icon_ingre', true);
+      function renderRightAlignedNumber(digits, prefix, value, maxDigits) {
+        clearDigits(digits, prefix);
+        const v = Math.round(Math.abs(value));
+        const s = String(v).padStart(1, '0');
+        const chars = s.split('');
+        let pos = maxDigits;
+        for (let i = chars.length - 1; i >= 0 && pos >= 1; i--, pos--) {
+          setDigitAt(digits, pos, Number(chars[i]), true, prefix);
+        }
+      }
+
+      function clearRecDisplay() {
+        clearDigits(recWeightDigits, 'rec_weight');
+        clearDigits(recListDigits, 'rec_list');
+        setIconOn('rec_line', false);
+        recUnitIds.forEach(id => setIconOn(id, false));
+        setIconOn('rec_colon', false);
+        setIconOn('rec_dot01', false);
+        setIconOn('rec_dot02', false);
+      }
+
+      function renderRecWeightForUnit(unit, weightG) {
+        const absWeight = Math.abs(weightG);
+        clearDigits(recWeightDigits, 'rec_weight');
+        recUnitIds.forEach(id => setIconOn(id, false));
+        setIconOn('rec_colon', false);
+        setIconOn('rec_dot01', false);
+        setIconOn('rec_dot02', false);
 
         if (unit === 'g' || unit === 'ml') {
-          const v = Math.round(rawWeightG);
-          const s = String(v).padStart(1, '0');
-          const chars = s.split('');
-          let pos = 5;
-          for (let i = chars.length - 1; i >= 0 && pos >= 1; i--, pos--) {
-            setDigitAt(pos, Number(chars[i]), true);
-          }
-          setIconOn(unit === 'g' ? 'live_unit_g' : 'live_unit_ml', true);
+          renderRightAlignedNumber(recWeightDigits, 'rec_weight', absWeight, 5);
+          setIconOn(unit === 'g' ? 'rec_unit_g' : 'rec_unit_ml', true);
           return;
         }
 
         if (unit === 'lb:oz') {
-          const totalOz = rawWeightG * 0.035274;
+          const totalOz = absWeight * 0.035274;
           const lb = Math.floor(totalOz / 16);
           const oz = totalOz - lb * 16;
           const ozOne = Math.floor(oz);
           const ozTenth = Math.floor((oz - ozOne) * 10);
 
           if (lb >= 10) {
-            setDigitAt(1, Math.floor(lb / 10) % 10, true);
-            setDigitAt(2, lb % 10, true);
+            setDigitAt(recWeightDigits, 1, Math.floor(lb / 10) % 10, true, 'rec_weight');
+            setDigitAt(recWeightDigits, 2, lb % 10, true, 'rec_weight');
           } else {
-            setDigitAt(2, lb % 10, true);
+            setDigitAt(recWeightDigits, 2, lb % 10, true, 'rec_weight');
           }
 
           if (ozOne >= 10) {
-            setDigitAt(3, Math.floor(ozOne / 10) % 10, true);
-            setDigitAt(4, ozOne % 10, true);
+            setDigitAt(recWeightDigits, 3, Math.floor(ozOne / 10) % 10, true, 'rec_weight');
+            setDigitAt(recWeightDigits, 4, ozOne % 10, true, 'rec_weight');
           } else {
-            setDigitAt(4, ozOne % 10, true);
+            setDigitAt(recWeightDigits, 4, ozOne % 10, true, 'rec_weight');
           }
-          setDigitAt(5, ozTenth, true);
+          setDigitAt(recWeightDigits, 5, ozTenth, true, 'rec_weight');
+
+          setIconOn('rec_unit_lb', true);
+          setIconOn('rec_unit_oz', true);
+          setIconOn('rec_colon', true);
+          setIconOn('rec_dot02', true);
+          return;
+        }
+
+        if (unit === 'lb') {
+          const lbVal = absWeight * 0.00220462;
+          const str = lbVal.toFixed(2); // x.xx
+          const parts = str.split('.');
+          const intDigit = Number(parts[0]) % 10;
+          const dec1 = Number(parts[1][0]);
+          const dec2 = Number(parts[1][1]);
+          setDigitAt(recWeightDigits, 3, intDigit, true, 'rec_weight');
+          setDigitAt(recWeightDigits, 4, dec1, true, 'rec_weight');
+          setDigitAt(recWeightDigits, 5, dec2, true, 'rec_weight');
+          setIconOn('rec_unit_lb', true);
+          setIconOn('rec_dot01', true);
+          return;
+        }
+
+        if (unit === 'oz' || unit === 'fl.oz') {
+          const ozVal = absWeight * 0.035274;
+          const ozOne = Math.floor(ozVal);
+          const ozTenth = Math.floor((ozVal - ozOne) * 10);
+          if (ozOne >= 10) {
+            setDigitAt(recWeightDigits, 3, Math.floor(ozOne / 10) % 10, true, 'rec_weight');
+            setDigitAt(recWeightDigits, 4, ozOne % 10, true, 'rec_weight');
+          } else {
+            setDigitAt(recWeightDigits, 4, ozOne % 10, true, 'rec_weight');
+          }
+          setDigitAt(recWeightDigits, 5, ozTenth, true, 'rec_weight');
+          if (unit === 'oz') {
+            setIconOn('rec_unit_oz', true);
+          } else {
+            setIconOn('rec_unit_fl', true);
+            setIconOn('rec_unit_oz', true);
+          }
+          setIconOn('rec_dot02', true);
+        }
+      }
+
+      function renderRecDisplay(weight, itemIndex, unit) {
+        if (itemIndex == null) {
+          clearRecDisplay();
+          return;
+        }
+        renderRecWeightForUnit(unit, weight);
+        const listNum = Math.max(0, Math.min(99, itemIndex));
+        const listStr = String(listNum).padStart(2, '0');
+        clearDigits(recListDigits, 'rec_list');
+        setDigitAt(recListDigits, 1, Number(listStr[0]), true, 'rec_list');
+        setDigitAt(recListDigits, 2, Number(listStr[1]), true, 'rec_list');
+        setIconOn('rec_line', true);
+      }
+
+      function renderWeightForUnit(unit) {
+        clearDigits(liveDigits, 'live_weight');
+        hideAllLiveIcons();
+
+        const absWeight = Math.abs(rawWeightG);
+
+        if (unit === 'g' || unit === 'ml') {
+          renderRightAlignedNumber(liveDigits, 'live_weight', absWeight, 5);
+          setIconOn(unit === 'g' ? 'live_unit_g' : 'live_unit_ml', true);
+          return;
+        }
+
+        if (unit === 'lb:oz') {
+          const totalOz = absWeight * 0.035274;
+          const lb = Math.floor(totalOz / 16);
+          const oz = totalOz - lb * 16;
+          const ozOne = Math.floor(oz);
+          const ozTenth = Math.floor((oz - ozOne) * 10);
+
+          if (lb >= 10) {
+            setDigitAt(liveDigits, 1, Math.floor(lb / 10) % 10, true, 'live_weight');
+            setDigitAt(liveDigits, 2, lb % 10, true, 'live_weight');
+          } else {
+            setDigitAt(liveDigits, 2, lb % 10, true, 'live_weight');
+          }
+
+          if (ozOne >= 10) {
+            setDigitAt(liveDigits, 3, Math.floor(ozOne / 10) % 10, true, 'live_weight');
+            setDigitAt(liveDigits, 4, ozOne % 10, true, 'live_weight');
+          } else {
+            setDigitAt(liveDigits, 4, ozOne % 10, true, 'live_weight');
+          }
+          setDigitAt(liveDigits, 5, ozTenth, true, 'live_weight');
 
           setIconOn('live_unit_lb', true);
           setIconOn('live_unit_oz', true);
@@ -2241,31 +2380,31 @@
         }
 
         if (unit === 'lb') {
-          const lbVal = rawWeightG * 0.00220462;
+          const lbVal = absWeight * 0.00220462;
           const str = lbVal.toFixed(2); // x.xx
           const parts = str.split('.');
           const intDigit = Number(parts[0]) % 10;
           const dec1 = Number(parts[1][0]);
           const dec2 = Number(parts[1][1]);
-          setDigitAt(3, intDigit, true);
-          setDigitAt(4, dec1, true);
-          setDigitAt(5, dec2, true);
+          setDigitAt(liveDigits, 3, intDigit, true, 'live_weight');
+          setDigitAt(liveDigits, 4, dec1, true, 'live_weight');
+          setDigitAt(liveDigits, 5, dec2, true, 'live_weight');
           setIconOn('live_unit_lb', true);
           setIconOn('live_dot01', true);
           return;
         }
 
         if (unit === 'oz' || unit === 'fl.oz') {
-          const ozVal = rawWeightG * 0.035274;
+          const ozVal = absWeight * 0.035274;
           const ozOne = Math.floor(ozVal);
           const ozTenth = Math.floor((ozVal - ozOne) * 10);
           if (ozOne >= 10) {
-            setDigitAt(3, Math.floor(ozOne / 10) % 10, true);
-            setDigitAt(4, ozOne % 10, true);
+            setDigitAt(liveDigits, 3, Math.floor(ozOne / 10) % 10, true, 'live_weight');
+            setDigitAt(liveDigits, 4, ozOne % 10, true, 'live_weight');
           } else {
-            setDigitAt(4, ozOne % 10, true);
+            setDigitAt(liveDigits, 4, ozOne % 10, true, 'live_weight');
           }
-          setDigitAt(5, ozTenth, true);
+          setDigitAt(liveDigits, 5, ozTenth, true, 'live_weight');
           if (unit === 'oz') {
             setIconOn('live_unit_oz', true);
           } else {
@@ -2307,6 +2446,75 @@
         });
       }
 
+      function setActiveBowl(index) {
+        tareIds.forEach((id, i) => {
+          const hasBowl = bowls[i] != null;
+          if (i === index) {
+            setIconOn(id, true);
+            setIconDim(id, false);
+          } else if (hasBowl) {
+            setIconOn(id, false);
+            setIconDim(id, true);
+          } else {
+            setIconOn(id, false);
+            setIconDim(id, false);
+          }
+        });
+      }
+
+      function recordBowlTare() {
+        if (rawWeightG === 0) return;
+        if (currentBowlIndex >= 4) return;
+        const nextIndex = currentBowlIndex + 1;
+        bowls[nextIndex] = { tareWeight: rawWeightG, items: [] };
+        currentBowlIndex = nextIndex;
+        setActiveBowl(currentBowlIndex);
+        clearRecDisplay();
+        syncWeight(0);
+      }
+
+      function recordIngredient() {
+        if (rawWeightG <= 0) return;
+        if (currentBowlIndex < 0) return;
+        const bowl = bowls[currentBowlIndex];
+        if (!bowl) return;
+        bowl.items.push(rawWeightG);
+        const itemIndex = bowl.items.length;
+        renderRecDisplay(rawWeightG, itemIndex, units[unitIndex]);
+        setActiveBowl(currentBowlIndex);
+        syncWeight(0);
+      }
+
+      const rightTop = document.querySelector('.hotspot[data-id="rightTop"]');
+      if (rightTop) {
+        let longPressTimer = null;
+        let didLongPress = false;
+        const startPress = (e) => {
+          e.preventDefault();
+          didLongPress = false;
+          longPressTimer = setTimeout(() => {
+            didLongPress = true;
+            recordBowlTare();
+          }, 1500);
+        };
+        const endPress = (e) => {
+          e.preventDefault();
+          if (longPressTimer) {
+            clearTimeout(longPressTimer);
+            longPressTimer = null;
+          }
+          if (!didLongPress) {
+            recordIngredient();
+          }
+        };
+        rightTop.addEventListener('pointerdown', startPress);
+        rightTop.addEventListener('pointerup', endPress);
+        rightTop.addEventListener('pointerleave', endPress);
+        rightTop.addEventListener('pointercancel', endPress);
+      }
+
+      setIconOn('icon_ingre', true);
+      clearRecDisplay();
       syncWeight(0);
     })();
   </script>
