@@ -2182,11 +2182,14 @@
 
       <!-- RIGHT -->
       <section class="panel">
-        <h3>重量模擬</h3>
+        <div class="row" style="display:flex; align-items:center; justify-content:space-between;">
+          <h3 id="panelTitle" style="margin:0;">重量模擬</h3>
+          <button class="btn" id="btnLangToggle" type="button">language</button>
+        </div>
 
         <div class="row">
           <div class="field">
-            <label>重量輸入 (g)</label>
+            <label id="weightLabel">重量輸入 (g)</label>
             <input id="weightInput" type="number" placeholder="0" min="-10000" max="10000" />
           </div>
           <input id="weightRange" type="range" min="-10000" max="10000" value="0" />
@@ -2194,31 +2197,15 @@
         </div>
 
         <div class="row">
-          <div class="hint">
+          <div class="hint" id="opGuide">
             <strong>操作說明 (V4)：</strong>
             <ul>
               <li><strong>TARE (右上)</strong>: 短按 = 記錄食材 (Add)，長按 1.5s = 歸零 (Stage Tare)</li>
-              <li><strong>POWER (右下)</strong>: 短按 = 切換單位，長按 2s = 開關機</li>
-              <li><strong>UP (左上)</strong>: 瀏覽 / 長按刪除單筆</li>
-              <li><strong>DOWN (左下)</strong>: 瀏覽 / 長按刪除全部</li>
+              <li><strong>POWER (右下)</strong>: 短按 = 切換單位，長按 1.5s = 開關機</li>
+              <li><strong>UP (左上)</strong>: 瀏覽 / 長按 1.5s = 切換一般模式</li>
+              <li><strong>DOWN (左下)</strong>: 瀏覽 / 長按 1.5s = 刪除全部</li>
             </ul>
           </div>
-        </div>
-
-        <div class="row">
-          <button class="btn" id="btnLcdAllOn" type="button" aria-pressed="false">LCD 一鍵全亮</button>
-        </div>
-
-        <div class="row">
-          <div class="field">
-            <label>Temp rec_list (01-99)</label>
-            <input id="tempRecListInput" type="number" placeholder="01" min="1" max="99" />
-          </div>
-          <div class="field">
-            <label>Temp rec_weight (0-10000)</label>
-            <input id="tempRecWeightInput" type="number" placeholder="0" min="0" max="10000" />
-          </div>
-          <div class="hint">輸入後按 Enter，暫時顯示在左側 LCD（之後可移除）</div>
         </div>
       </section>
 
@@ -2226,17 +2213,6 @@
   </div> <!-- /page -->
 
   <script>
-    (function () {
-      const btn = document.getElementById('btnLcdAllOn');
-      if (!btn) return;
-      btn.addEventListener('click', () => {
-        document.body.classList.toggle('lcdAllOn');
-        const on = document.body.classList.contains('lcdAllOn');
-        btn.setAttribute('aria-pressed', String(on));
-        btn.textContent = on ? 'LCD 全亮（已開）' : 'LCD 一鍵全亮';
-      });
-    })();
-
     (function () {
       const units = ['g', 'lb:oz', 'lb', 'oz', 'fl.oz', 'ml'];
       let unitIndex = 0;
@@ -2248,8 +2224,11 @@
       const weightInput = document.getElementById('weightInput');
       const weightRange = document.getElementById('weightRange');
       const weightHint = document.getElementById('weightHint');
-      const tempRecListInput = document.getElementById('tempRecListInput');
-      const tempRecWeightInput = document.getElementById('tempRecWeightInput');
+      const langToggle = document.getElementById('btnLangToggle');
+      const opGuide = document.getElementById('opGuide');
+      const panelTitle = document.getElementById('panelTitle');
+      const weightLabel = document.getElementById('weightLabel');
+      let lang = 'zh';
 
       const liveIconIds = [
         'live_unit_g','live_unit_lb','live_unit_oz','live_unit_fl','live_unit_ml',
@@ -2512,31 +2491,37 @@
         }
       }
 
-      function renderTempRecDisplay() {
-        const listVal = tempRecListInput ? tempRecListInput.value.trim() : '';
-        const weightVal = tempRecWeightInput ? tempRecWeightInput.value.trim() : '';
-
-        if (weightVal !== '') {
-          const w = Math.max(0, Math.min(10000, Math.round(Number(weightVal))));
-          renderRecWeightForUnit(units[unitIndex], w);
+      function setLanguage(nextLang) {
+        lang = nextLang;
+        if (!opGuide) return;
+        if (lang === 'en') {
+          if (panelTitle) panelTitle.textContent = 'Weight Simulation';
+          if (weightLabel) weightLabel.textContent = 'Weight Input (g)';
+          opGuide.innerHTML = `
+            <strong>Operation Guide (V4):</strong>
+            <ul>
+              <li><strong>TARE (Upper Right)</strong>: Short press = Add ingredient; Long press 1.5s = Stage Tare</li>
+              <li><strong>POWER (Lower Right)</strong>: Short press = Switch unit; Long press 1.5s = Power on/off</li>
+              <li><strong>UP (Upper Left)</strong>: Browse / Long press 1.5s = Toggle normal mode</li>
+              <li><strong>DOWN (Lower Left)</strong>: Browse / Long press 1.5s = Delete all</li>
+            </ul>
+          `;
         } else {
-          clearDigits(recWeightDigits, 'rec_weight');
-          recUnitIds.forEach(id => setIconOn(id, false));
-          setIconOn('rec_colon', false);
-          setIconOn('rec_dot01', false);
-          setIconOn('rec_dot02', false);
+          if (panelTitle) panelTitle.textContent = '重量模擬';
+          if (weightLabel) weightLabel.textContent = '重量輸入 (g)';
+          opGuide.innerHTML = `
+            <strong>操作說明 (V4)：</strong>
+            <ul>
+              <li><strong>TARE (右上)</strong>: 短按 = 記錄食材 (Add)，長按 1.5s = 歸零 (Stage Tare)</li>
+              <li><strong>POWER (右下)</strong>: 短按 = 切換單位，長按 1.5s = 開關機</li>
+              <li><strong>UP (左上)</strong>: 瀏覽 / 長按 1.5s = 切換一般模式</li>
+              <li><strong>DOWN (左下)</strong>: 瀏覽 / 長按 1.5s = 刪除全部</li>
+            </ul>
+          `;
         }
-
-        if (listVal !== '') {
-          const n = Math.max(1, Math.min(99, Math.round(Number(listVal))));
-          const listStr = String(n).padStart(2, '0');
-          clearDigits(recListDigits, 'rec_list');
-          setDigitAt(recListDigits, 1, Number(listStr[0]), true, 'rec_list');
-          setDigitAt(recListDigits, 2, Number(listStr[1]), true, 'rec_list');
-          setIconOn('rec_line', true);
-        } else {
-          clearDigits(recListDigits, 'rec_list');
-          setIconOn('rec_line', false);
+        if (weightHint) {
+          const netText = lang === 'en' ? 'Net' : '淨重';
+          weightHint.textContent = `${rawWeightG}g / ${netText}`;
         }
       }
 
@@ -2630,7 +2615,10 @@
         rawWeightG = clampWeight(val);
         if (weightInput) weightInput.value = String(rawWeightG);
         if (weightRange) weightRange.value = String(rawWeightG);
-        if (weightHint) weightHint.textContent = `${rawWeightG}g / 淨重`;
+        if (weightHint) {
+          const netText = lang === 'en' ? 'Net' : '淨重';
+          weightHint.textContent = `${rawWeightG}g / ${netText}`;
+        }
         if (isPowerOn && !deleteMode) applyUnitDisplay(units[unitIndex]);
       }
 
@@ -2645,15 +2633,9 @@
         });
       }
 
-      if (tempRecListInput) {
-        tempRecListInput.addEventListener('input', () => {
-          renderTempRecDisplay();
-        });
-      }
-
-      if (tempRecWeightInput) {
-        tempRecWeightInput.addEventListener('input', () => {
-          renderTempRecDisplay();
+      if (langToggle) {
+        langToggle.addEventListener('click', () => {
+          setLanguage(lang === 'zh' ? 'en' : 'zh');
         });
       }
 
@@ -2671,7 +2653,7 @@
             if (!isPowerOn) return;
             isPowerOn = false;
             document.body.classList.add('powerOff');
-          }, 2000);
+          }, 1500);
         };
         const endPress = (e) => {
           e.preventDefault();
@@ -2817,9 +2799,9 @@
 
       const leftTop = document.querySelector('.hotspot[data-id="leftTop"]');
       if (leftTop) {
+        let longPressTimer = null;
         let didLongPress = false;
         let isPressing = false;
-        let pressStart = 0;
         const startPress = (e) => {
           e.preventDefault();
           if (!isPowerOn || deleteMode) return;
@@ -2828,7 +2810,12 @@
           }
           isPressing = true;
           didLongPress = false;
-          pressStart = Date.now();
+          longPressTimer = setTimeout(() => {
+            if (!isPressing) return;
+            didLongPress = true;
+            recordMode = !recordMode;
+            updateModeUI();
+          }, 1500);
         };
         const endPress = (e) => {
           e.preventDefault();
@@ -2837,13 +2824,11 @@
           }
           if (!isPressing) return;
           isPressing = false;
-          const duration = Date.now() - pressStart;
-          if (duration >= 2000) {
-            didLongPress = true;
-            recordMode = !recordMode;
-            updateModeUI();
-            return;
+          if (longPressTimer) {
+            clearTimeout(longPressTimer);
+            longPressTimer = null;
           }
+          if (didLongPress) return;
           if (deleteMode) {
             toggleDeleteChoice();
             return;
@@ -2868,7 +2853,7 @@
           longPressTimer = setTimeout(() => {
             didLongPress = true;
             enterDeleteMode();
-          }, 2000);
+          }, 1500);
         };
         const endPress = (e) => {
           e.preventDefault();
@@ -2898,6 +2883,7 @@
       document.getElementById('live_no')?.classList.remove('on');
       setIconOn('live_minus', false);
       clearRecDisplay();
+      setLanguage('zh');
       updateModeUI();
       syncWeight(0);
     })();
