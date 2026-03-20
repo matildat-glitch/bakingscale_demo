@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-Hant">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -155,7 +155,7 @@
 #lcd_background{
   position: absolute;
   inset: 0;
-  opacity: 0.3;
+  opacity: 0;
   display: block;
   pointer-events: none;
   z-index: 1;
@@ -272,8 +272,8 @@
 
 
 
-      #live_weight,
-      #live_weight_allon{
+#live_weight,
+#live_weight_allon{
   --x: 65.5%;
   --y: 45.5%;
   --w: 60%;
@@ -399,6 +399,43 @@
     .lcdIcon.dim{ opacity: .35 !important; visibility: visible; }
 
 .lcdIcon > svg{
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Right-side overload helper dots */
+#live_dots{
+  position: absolute;
+  left: var(--dots-x, 96.8%);
+  top: 0;
+  width: var(--dot-size, 1%);
+  height: 100%;
+  transform: translateX(-50%);
+  z-index: 20;
+  pointer-events: none;
+  opacity: 1;
+
+  /* Tune these 3 values */
+  --dots-start-y: 9%;
+  --dots-gap: 5.2%;
+}
+
+#live_dots .dot{
+  position: absolute;
+  left: 0;
+  top: calc(var(--dots-start-y) + (var(--i) * var(--dots-gap)));
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  opacity: 0;
+  transition: opacity .15s ease;
+}
+
+#live_dots .dot.on{
+  opacity: 1;
+}
+
+#live_dots .dot svg{
   width: 100%;
   height: 100%;
   display: block;
@@ -595,12 +632,80 @@
   z-index: 2;
 }
 
+    /* ========== Simulated weights on plate (cls-5 area) ========== */
+    .weightsLayer{
+      position: absolute;
+      left: 8.1%;
+      top: 5.0%;
+      width: 83.8%;
+      height: 68.6%;
+      z-index: 12000;
+      pointer-events: auto;
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .weightItem{
+      position: absolute;
+      width: 96px;
+      height: 100px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transform: translate(-50%, -50%);
+    }
+
+    .weightBubble{
+      width: 86px;
+      height: 86px;
+      border-radius: 999px;
+      border: 2px solid rgba(255,255,255,.62);
+      background: radial-gradient(circle at 30% 28%, #f4f4f4 0%, #d8d8d8 45%, #b9bcc2 100%);
+      box-shadow:
+        0 10px 18px rgba(0,0,0,.28),
+        inset 0 2px 6px rgba(255,255,255,.7),
+        inset 0 -5px 10px rgba(0,0,0,.12);
+      color: #1a1a1a;
+      font-weight: 800;
+      font-size: 14px;
+      letter-spacing: .2px;
+      cursor: pointer;
+      user-select: none;
+      pointer-events: auto;
+    }
+
+    .weightBubble.selected{
+      border-color: #ff7043;
+      box-shadow:
+        0 0 0 3px rgba(255,112,67,.3),
+        0 10px 18px rgba(0,0,0,.28),
+        inset 0 2px 6px rgba(255,255,255,.7),
+        inset 0 -5px 10px rgba(0,0,0,.12);
+    }
+
+    .weightDelete{
+      position: absolute;
+      right: 2px;
+      top: 0;
+      width: 26px;
+      height: 26px;
+      border-radius: 999px;
+      border: 0;
+      background: #e53935;
+      color: #fff;
+      font-size: 16px;
+      line-height: 1;
+      cursor: pointer;
+      box-shadow: 0 4px 8px rgba(0,0,0,.25);
+      pointer-events: auto;
+    }
+
     /* ========== Hotspots ========== */
     .hotspots{
       position:absolute;
       inset:0;
       z-index: 20000;
-      pointer-events:auto;
+      pointer-events:none;
     }
 
     .hotspot{
@@ -615,6 +720,7 @@
       background: rgba(255,255,255,0);
       cursor:pointer;
       -webkit-tap-highlight-color: transparent;
+      pointer-events:auto;
     }
 
     .hotspot:active{
@@ -668,7 +774,7 @@
       justify-content:space-between;
       gap:10px;
       padding: 12px;
-      border-radius: 14px;
+      border-radius: 10px;
       border: 1px solid var(--line);
       background: rgba(0,0,0,.02);
     }
@@ -680,15 +786,13 @@
     }
 
     input[type="number"]{
-      width: 160px;
+      width: 120px;
       padding: 10px 10px;
       border-radius: 12px;
       border: 1px solid rgba(0,0,0,.18);
       background:#fff;
       font-size: 14px;
     }
-
-    input[type="range"]{ width: 100%; }
 
     .btnRow{
       display:flex;
@@ -700,17 +804,79 @@
       border: 1px solid rgba(0,0,0,.14);
       background: rgba(0,0,0,.04);
       color:#111;
-      padding: 10px 12px;
-      border-radius: 14px;
+      padding: 8px 10px;
+      border-radius: 10px;
       cursor:pointer;
       font-weight:700;
     }
     .btn:hover{ background: rgba(0,0,0,.06); }
 
+    #btnCharging,
+    #btnLowBattery{
+      font-size: 12px;
+    }
+    #btnCharging[aria-pressed="true"]{
+      background: rgba(46, 125, 50, .16);
+      border-color: rgba(46, 125, 50, .42);
+      color: #1b5e20;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.35);
+    }
+    #btnCharging[aria-pressed="true"]:hover{
+      background: rgba(46, 125, 50, .22);
+    }
+    #btnLowBattery[aria-pressed="true"]{
+      background: rgba(255, 167, 38, .2);
+      border-color: rgba(245, 124, 0, .44);
+      color: #8f4d00;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.35);
+    }
+    #btnLowBattery[aria-pressed="true"]:hover{
+      background: rgba(255, 167, 38, .28);
+    }
+
+    /* Keep ADD button anchored at right, but pull input closer to it */
+    .field #weightInput{
+      margin-left: auto;
+    }
+    .field #btnAddWeight{
+      margin-left: 6px;
+    }
+
     .hint{
       font-size: 12px;
       opacity: .75;
       line-height: 1.5;
+    }
+
+    .hintRow{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
+    }
+
+    .hintActionsLeft{
+      display:flex;
+      align-items:center;
+      gap:6px;
+    }
+
+    .hintActionsRight{
+      display:flex;
+      align-items:center;
+    }
+
+    .btnDanger{
+      border-color: rgba(183,28,28,.26);
+      background: rgba(183,28,28,.08);
+      color: #8e2020;
+      font-size: 12px;
+      padding: 8px 10px;
+    }
+
+    .btnDanger:disabled{
+      opacity: .45;
+      cursor: not-allowed;
     }
 
     /* 一鍵全亮 */
@@ -720,6 +886,27 @@
     .allOnDigits{ display: none; }
     body.lcdAllOn .allOnDigits{ display: flex; }
     body.lcdAllOn #live_weight{ display: none; }
+
+    /* charging mode: dim current display content, keep charging animation bright */
+    body.chargingMode:not(.powerOff) .lcdSeg{
+      opacity: 0;
+    }
+    body.chargingMode:not(.powerOff) .lcdIcon.on{
+      opacity: 0 !important;
+    }
+    body.chargingMode:not(.powerOff) .lcdIcon.dim{
+      opacity: 0 !important;
+    }
+    body.chargingMode:not(.powerOff) #live_dots .dot{
+      opacity: 0;
+    }
+    body.chargingMode:not(.powerOff) #live_dots .dot.on{
+      opacity: 0;
+    }
+    body.chargingMode:not(.powerOff) #icon_charging.on,
+    body.chargingMode:not(.powerOff) #icon_battery.on{
+      opacity: 1 !important;
+    }
 
     /* power off */
     body.powerOff .lcdSeg,
@@ -960,6 +1147,7 @@
 </svg>
             </div>
 
+            <div class="weightsLayer" id="weightsLayer" aria-label="weights-layer"></div>
 
 
             <!-- ✅ 2) LCD 顯示層（之後數字/icon 都會在這裡畫） -->
@@ -1400,15 +1588,10 @@
             <path d="M3.59,26.03v17.85l-2.68,2.68c-.56-.64-.91-1.48-.91-2.4v-18.13l.33-.33,1.46-1.45,1.79,1.79Z"/>
           </symbol>
           <symbol id="yes_S" viewBox="0 0 16.73 47.8">
-            <!-- Top bar -->
             <path d="M15.48.91l-2.68,2.68H3.92L1.25.91C1.89.35,2.73,0,3.64,0h9.44c.92,0,1.76.35,2.4.91Z"/>
-            <!-- Middle bar -->
             <polygon points="14.6 23.9 13.15 25.35 12.81 25.69 3.92 25.69 3.59 25.35 2.13 23.9 3.92 22.11 12.81 22.11 14.6 23.9"/>
-            <!-- Bottom bar -->
             <path d="M15.48,46.89c-.64.56-1.48.91-2.4.91H3.64c-.92,0-1.76-.35-2.4-.91l2.68-2.68h8.88l2.68,2.68Z"/>
-            <!-- Upper-left vertical -->
             <path d="M3.59,3.92v17.85l-1.79,1.79-1.46-1.45-.33-.33V3.64c0-.92.35-1.76.91-2.4l2.68,2.68Z"/>
-            <!-- Lower-right vertical -->
             <path d="M16.73,26.03v18.12c0,.92-.35,1.76-.91,2.4l-2.68-2.68v-17.85l1.79-1.79 1.45 1.45.34.34Z"/>
           </symbol>
           <symbol id="no_N" viewBox="0 0 16.73 47.8">
@@ -1901,6 +2084,25 @@
                   </g>
                 </svg>
               </div>
+
+              <div id="live_dots" aria-label="live_dots">
+                <span class="dot" style="--i:0"><svg viewBox="0 0 2 2"><circle fill="#fefefe" cx="1" cy="1" r="1"/></svg></span>
+                <span class="dot" style="--i:1"><svg viewBox="0 0 2 2"><circle fill="#fefefe" cx="1" cy="1" r="1"/></svg></span>
+                <span class="dot" style="--i:2"><svg viewBox="0 0 2 2"><circle fill="#fefefe" cx="1" cy="1" r="1"/></svg></span>
+                <span class="dot" style="--i:3"><svg viewBox="0 0 2 2"><circle fill="#fefefe" cx="1" cy="1" r="1"/></svg></span>
+                <span class="dot" style="--i:4"><svg viewBox="0 0 2 2"><circle fill="#fefefe" cx="1" cy="1" r="1"/></svg></span>
+                <span class="dot" style="--i:5"><svg viewBox="0 0 2 2"><circle fill="#fefefe" cx="1" cy="1" r="1"/></svg></span>
+                <span class="dot" style="--i:6"><svg viewBox="0 0 2 2"><circle fill="#fefefe" cx="1" cy="1" r="1"/></svg></span>
+                <span class="dot" style="--i:7"><svg viewBox="0 0 2 2"><circle fill="#fefefe" cx="1" cy="1" r="1"/></svg></span>
+                <span class="dot" style="--i:8"><svg viewBox="0 0 2 2"><circle fill="#fefefe" cx="1" cy="1" r="1"/></svg></span>
+                <span class="dot" style="--i:9"><svg viewBox="0 0 2 2"><circle fill="#fefefe" cx="1" cy="1" r="1"/></svg></span>
+                <span class="dot" style="--i:10"><svg viewBox="0 0 2 2"><circle fill="#fefefe" cx="1" cy="1" r="1"/></svg></span>
+                <span class="dot" style="--i:11"><svg viewBox="0 0 2 2"><circle fill="#fefefe" cx="1" cy="1" r="1"/></svg></span>
+                <span class="dot" style="--i:12"><svg viewBox="0 0 2 2"><circle fill="#fefefe" cx="1" cy="1" r="1"/></svg></span>
+                <span class="dot" style="--i:13"><svg viewBox="0 0 2 2"><circle fill="#fefefe" cx="1" cy="1" r="1"/></svg></span>
+                <span class="dot" style="--i:14"><svg viewBox="0 0 2 2"><circle fill="#fefefe" cx="1" cy="1" r="1"/></svg></span>
+                <span class="dot" style="--i:15"><svg viewBox="0 0 2 2"><circle fill="#fefefe" cx="1" cy="1" r="1"/></svg></span>
+              </div>
               
             </div>
 
@@ -1912,27 +2114,34 @@
       <!-- RIGHT -->
       <section class="panel">
         <div class="row" style="display:flex; align-items:center; justify-content:space-between;">
-          <h3 id="panelTitle" style="margin:0;">重量模擬</h3>
-          <button class="btn" id="btnLangToggle" type="button">language</button>
+          <h3 id="panelTitle" style="margin:0;">Weight Simulator</h3>
         </div>
 
         <div class="row">
           <div class="field">
-            <label id="weightLabel">重量輸入 (g)</label>
-            <input id="weightInput" type="number" placeholder="0" min="-10000" max="10000" />
+            <label id="weightLabel">Weight Input (g)</label>
+            <input id="weightInput" type="number" placeholder="0" min="-10000" max="15000" />
+            <button class="btn" id="btnAddWeight" type="button">ADD</button>
           </div>
-          <input id="weightRange" type="range" min="-10000" max="10000" value="0" />
-          <div class="hint" id="weightHint">0g / 淨重</div>
+          <div class="hintRow">
+            <div class="hintActionsLeft">
+              <button class="btn" id="btnLowBattery" type="button">Low battery</button>
+              <button class="btn" id="btnCharging" type="button">Charging</button>
+            </div>
+            <div class="hintActionsRight">
+              <button class="btn btnDanger" id="btnRemoveAllWeights" type="button" disabled>Remove all weights</button>
+            </div>
+          </div>
         </div>
 
         <div class="row">
           <div class="hint" id="opGuide">
-            <strong>操作說明 (V5)：</strong>
+            <strong>Operation Guide (V6):</strong>
             <ul>
-              <li><strong>TARE (右上)</strong>: 記錄模式短按 = 記錄食材、長按 1.5s = Stage Tare；基本模式長短按皆歸零</li>
-              <li><strong>POWER (右下)</strong>: 短按 = 切換單位，長按 1.5s = 開關機</li>
-              <li><strong>UP (左上)</strong>: 瀏覽下一筆 / 長按 1.5s = 切換一般模式</li>
-              <li><strong>DOWN (左下)</strong>: 瀏覽上一筆 / 長按 1.5s = 刪除全部</li>
+              <li><strong>TARE</strong>: In record mode, short press = Add ingredient; long press 1.5s = Stage tare. In normal mode, any press zeros the scale.</li>
+              <li><strong>POWER</strong>: Power off = short press to power on; Power on = short press switch unit / long press 1.5s power off</li>
+              <li><strong>UP</strong>: Browse next / Long press 1.5s = Toggle normal mode</li>
+              <li><strong>DOWN</strong>: Browse previous / Long press 1.5s = Delete all</li>
             </ul>
           </div>
         </div>
@@ -1951,13 +2160,16 @@
       const recWeightDigits = Array.from(document.querySelectorAll('#rec_weight .segDigit'));
       const recListDigits = Array.from(document.querySelectorAll('#rec_list .segDigit'));
       const weightInput = document.getElementById('weightInput');
-      const weightRange = document.getElementById('weightRange');
-      const weightHint = document.getElementById('weightHint');
-      const langToggle = document.getElementById('btnLangToggle');
+      const addWeightBtn = document.getElementById('btnAddWeight');
+      const lowBatteryBtn = document.getElementById('btnLowBattery');
+      const chargingBtn = document.getElementById('btnCharging');
+      const removeAllWeightsBtn = document.getElementById('btnRemoveAllWeights');
+      const weightsLayer = document.getElementById('weightsLayer');
+      const liveDots = Array.from(document.querySelectorAll('#live_dots .dot'));
+      const batteryRects = Array.from(document.querySelectorAll('#icon_battery svg rect'));
       const opGuide = document.getElementById('opGuide');
       const panelTitle = document.getElementById('panelTitle');
       const weightLabel = document.getElementById('weightLabel');
-      let lang = 'zh';
 
       const liveIconIds = [
         'live_unit_g','live_unit_lb','live_unit_oz','live_unit_fl','live_unit_ml',
@@ -1974,10 +2186,233 @@
       let deleteMode = false;
       let deleteChoice = 'yes'; // 'yes' | 'no'
       let recordMode = true; // true = ingredient/recording mode, false = normal mode
+      const plateWeights = []; // { id:number, grams:number }
+      let selectedWeightId = null;
+      let nextPlateWeightId = 1;
+      let tareReferenceG = 0;
+      const batteryIconBaseOn = document.getElementById('icon_battery')?.classList.contains('on') || false;
+      let lowBatteryMode = false;
+      let chargingMode = false;
+      let chargingTimer = null;
+      let chargingFrame = 0;
+      let chargingIconWasOn = false;
+      const MIN_WEIGHT_G = -10000;
+      const MAX_WEIGHT_G = 15000;
+      const OVERWEIGHT_THRESHOLD_G = 10000;
+      const LIVE_DOTS_FULL_SCALE_G = 10000;
 
       function clampWeight(val) {
         if (!Number.isFinite(val)) return 0;
-        return Math.max(-10000, Math.min(10000, Math.round(val)));
+        return Math.max(MIN_WEIGHT_G, Math.min(MAX_WEIGHT_G, Math.round(val)));
+      }
+
+      function getPlateTotalWeight() {
+        return plateWeights.reduce((sum, item) => sum + item.grams, 0);
+      }
+
+      function getNetWeightFromPlate() {
+        return getPlateTotalWeight() - tareReferenceG;
+      }
+
+      function applyTareFromCurrentPlate() {
+        tareReferenceG = getPlateTotalWeight();
+        syncWeight(getNetWeightFromPlate());
+      }
+
+      function syncFromPlateState() {
+        syncWeight(getNetWeightFromPlate());
+      }
+
+      function renderLiveDotsByPlateWeight() {
+        const dotCount = liveDots.length;
+        if (dotCount === 0) return;
+
+        const totalWeightG = Math.max(0, getPlateTotalWeight());
+        liveDots.forEach(dot => dot.classList.remove('on'));
+
+        if (dotCount === 1) {
+          liveDots[0].classList.add('on');
+          return;
+        }
+
+        // 0g baseline: only first(top) and last(bottom) dots on.
+        liveDots[0].classList.add('on');
+        liveDots[dotCount - 1].classList.add('on');
+
+        if (totalWeightG <= 0) return;
+        if (totalWeightG >= LIVE_DOTS_FULL_SCALE_G) {
+          liveDots.forEach(dot => dot.classList.add('on'));
+          return;
+        }
+
+        // Fill from bottom to top based on plate total weight (independent from live/net value).
+        const dynamicDotCount = Math.max(1, dotCount - 2);
+        const gramsPerDot = LIVE_DOTS_FULL_SCALE_G / dynamicDotCount;
+        const extraDots = Math.min(dynamicDotCount, Math.ceil(totalWeightG / gramsPerDot));
+
+        for (let i = 0; i < extraDots; i++) {
+          const idx = (dotCount - 2) - i; // 14,13,12... (upward)
+          if (idx <= 0) break;
+          liveDots[idx].classList.add('on');
+        }
+      }
+
+      function setBatteryChargeFrame(frame) {
+        // frame 0: path only; frame 1: +left; frame 2: +left+middle; frame 3: +all rects
+        batteryRects.forEach((rect, idx) => {
+          rect.style.opacity = idx < frame ? '1' : '0';
+        });
+      }
+
+      function setBatteryLowFrame() {
+        batteryRects.forEach((rect, idx) => {
+          rect.style.opacity = idx === 0 ? '1' : '0';
+        });
+      }
+
+      function resetBatteryChargeVisual() {
+        batteryRects.forEach((rect) => {
+          rect.style.opacity = '';
+        });
+      }
+
+      function applyBatteryModeVisual() {
+        if (chargingMode) {
+          setIconOn('icon_battery', true);
+          setBatteryChargeFrame(chargingFrame);
+          return;
+        }
+        if (lowBatteryMode) {
+          setIconOn('icon_battery', true);
+          setBatteryLowFrame();
+          return;
+        }
+        resetBatteryChargeVisual();
+        setIconOn('icon_battery', batteryIconBaseOn);
+      }
+
+      function stopChargingMode() {
+        if (!chargingMode) return;
+        chargingMode = false;
+        document.body.classList.remove('chargingMode');
+        if (chargingBtn) chargingBtn.setAttribute('aria-pressed', 'false');
+        if (chargingTimer) {
+          clearInterval(chargingTimer);
+          chargingTimer = null;
+        }
+        setIconOn('icon_charging', chargingIconWasOn);
+        applyBatteryModeVisual();
+      }
+
+      function startChargingMode() {
+        if (chargingMode) return;
+        chargingMode = true;
+        chargingFrame = 0;
+        chargingIconWasOn = document.getElementById('icon_charging')?.classList.contains('on') || false;
+        document.body.classList.add('chargingMode');
+        if (chargingBtn) chargingBtn.setAttribute('aria-pressed', 'true');
+        setIconOn('icon_charging', true);
+        applyBatteryModeVisual();
+        chargingTimer = setInterval(() => {
+          chargingFrame = (chargingFrame + 1) % 4;
+          applyBatteryModeVisual();
+        }, 500);
+      }
+
+      function updateRemoveAllButtonState() {
+        if (!removeAllWeightsBtn) return;
+        removeAllWeightsBtn.disabled = plateWeights.length === 0;
+      }
+
+      function removePlateWeightById(id) {
+        const idx = plateWeights.findIndex(item => item.id === id);
+        if (idx < 0) return;
+        plateWeights.splice(idx, 1);
+        if (selectedWeightId === id) selectedWeightId = null;
+        renderPlateWeights();
+        syncFromPlateState();
+      }
+
+      function removeAllPlateWeights() {
+        if (plateWeights.length === 0) return;
+        plateWeights.length = 0;
+        selectedWeightId = null;
+        renderPlateWeights();
+        syncFromPlateState();
+      }
+
+      function addPlateWeight(weightG) {
+        const grams = clampWeight(weightG);
+        if (!Number.isFinite(grams) || grams <= 0) return;
+        plateWeights.push({
+          id: nextPlateWeightId++,
+          grams
+        });
+        selectedWeightId = null;
+        renderPlateWeights();
+        syncFromPlateState();
+      }
+
+      function getPlateSlot(index) {
+        // Keep all bubbles in the lower half of the gray plate area.
+        if (index === 0) return { x: 50, y: 74 };
+        const pairIndex = Math.floor((index - 1) / 2);   // 0,0,1,1,2,2...
+        const side = (index - 1) % 2 === 0 ? -1 : 1;     // left, right, left, right...
+        const row = Math.floor(pairIndex / 3);           // move up/down bands every 3 pairs
+        const band = pairIndex % 3;                      // 0,1,2
+
+        const xBase = 50 + side * 15;
+        const x = xBase + side * (row * 8);
+        const yPattern = [74, 64, 82];
+        const y = yPattern[band] + (row % 2 === 0 ? 0 : (band === 1 ? -3 : (band === 2 ? 3 : 0)));
+
+        return {
+          x: Math.max(14, Math.min(86, x)),
+          y: Math.max(60, Math.min(92, y))
+        };
+      }
+
+      function renderPlateWeights() {
+        if (!weightsLayer) return;
+        weightsLayer.innerHTML = '';
+
+        plateWeights.forEach((item, idx) => {
+          const slot = getPlateSlot(idx);
+          const wrap = document.createElement('div');
+          wrap.className = 'weightItem';
+          wrap.style.left = `${slot.x}%`;
+          wrap.style.top = `${slot.y}%`;
+
+          const bubble = document.createElement('button');
+          bubble.type = 'button';
+          bubble.className = 'weightBubble';
+          if (selectedWeightId === item.id) bubble.classList.add('selected');
+          bubble.textContent = `${item.grams}g`;
+          bubble.addEventListener('click', (e) => {
+            e.preventDefault();
+            selectedWeightId = selectedWeightId === item.id ? null : item.id;
+            renderPlateWeights();
+          });
+          wrap.appendChild(bubble);
+
+          if (selectedWeightId === item.id) {
+            const delBtn = document.createElement('button');
+            delBtn.type = 'button';
+            delBtn.className = 'weightDelete';
+            delBtn.setAttribute('aria-label', `delete-${item.grams}g`);
+            delBtn.textContent = '×';
+            delBtn.addEventListener('click', (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              removePlateWeightById(item.id);
+            });
+            wrap.appendChild(delBtn);
+          }
+
+          weightsLayer.appendChild(wrap);
+        });
+
+        updateRemoveAllButtonState();
       }
 
       function setIconOn(id, on) {
@@ -2014,6 +2449,20 @@
 
       function clearDigits(digits, prefix) {
         digits.forEach((_, idx) => setDigitAt(digits, idx + 1, 0, false, prefix));
+      }
+
+      function setDigitSymbol(digits, pos, symbolId, visible = true) {
+        const el = digits[pos - 1];
+        if (!el) return;
+        if (!visible) {
+          el.style.visibility = 'hidden';
+          el.style.opacity = '0';
+          return;
+        }
+        el.style.visibility = 'visible';
+        el.style.opacity = '1';
+        const use = el.querySelector('use');
+        if (use) use.setAttribute('href', `#${symbolId}`);
       }
 
       function renderRightAlignedNumber(digits, prefix, value, maxDigits, startPos = 1) {
@@ -2219,43 +2668,15 @@
         }
       }
 
-      function setLanguage(nextLang) {
-        lang = nextLang;
-        if (!opGuide) return;
-        if (lang === 'en') {
-          if (panelTitle) panelTitle.textContent = 'Weight Simulation';
-          if (weightLabel) weightLabel.textContent = 'Weight Input (g)';
-          opGuide.innerHTML = `
-            <strong>Operation Guide (V5):</strong>
-            <ul>
-              <li><strong>TARE (Upper Right)</strong>: In record mode, short press = Add ingredient and long press 1.5s = Stage Tare; in normal mode, both short and long press zero the scale</li>
-              <li><strong>POWER (Lower Right)</strong>: Short press = Switch unit; Long press 1.5s = Power on/off</li>
-              <li><strong>UP (Upper Left)</strong>: Browse next / Long press 1.5s = Toggle normal mode</li>
-              <li><strong>DOWN (Lower Left)</strong>: Browse previous / Long press 1.5s = Delete all</li>
-            </ul>
-          `;
-        } else {
-          if (panelTitle) panelTitle.textContent = '重量模擬';
-          if (weightLabel) weightLabel.textContent = '重量輸入 (g)';
-          opGuide.innerHTML = `
-            <strong>操作說明 (V5)：</strong>
-            <ul>
-              <li><strong>TARE (右上)</strong>: 記錄模式短按 = 記錄食材、長按 1.5s = Stage Tare；基本模式長短按皆歸零</li>
-              <li><strong>POWER (右下)</strong>: 短按 = 切換單位，長按 1.5s = 開關機</li>
-              <li><strong>UP (左上)</strong>: 瀏覽下一筆 / 長按 1.5s = 切換一般模式</li>
-              <li><strong>DOWN (左下)</strong>: 瀏覽上一筆 / 長按 1.5s = 刪除全部</li>
-            </ul>
-          `;
-        }
-        if (weightHint) {
-          const netText = lang === 'en' ? 'Net' : '淨重';
-          weightHint.textContent = `${rawWeightG}g / ${netText}`;
-        }
-      }
 
       function renderWeightForUnit(unit) {
         clearDigits(liveDigits, 'live_weight');
         hideAllLiveIcons();
+        if (rawWeightG > OVERWEIGHT_THRESHOLD_G) {
+          [2, 3, 4, 5].forEach((pos) => setDigitSymbol(liveDigits, pos, 'yes_E', true));
+          setIconOn('live_minus', false);
+          return;
+        }
         const isNeg = rawWeightG < 0;
         const forceShowMinus = false; // show only when negative
 
@@ -2341,31 +2762,50 @@
 
       function syncWeight(val) {
         rawWeightG = clampWeight(val);
-        if (weightInput) weightInput.value = String(rawWeightG);
-        if (weightRange) weightRange.value = String(rawWeightG);
-        if (weightHint) {
-          const netText = lang === 'en' ? 'Net' : '淨重';
-          weightHint.textContent = `${rawWeightG}g / ${netText}`;
-        }
+        renderLiveDotsByPlateWeight();
         if (isPowerOn && !deleteMode) applyUnitDisplay(units[unitIndex]);
       }
 
-      if (weightRange) {
-        weightRange.addEventListener('input', (e) => {
-          syncWeight(Number(e.target.value));
-        });
-      }
-      if (weightInput) {
-        weightInput.addEventListener('input', (e) => {
-          syncWeight(Number(e.target.value));
+      if (addWeightBtn) {
+        addWeightBtn.addEventListener('click', () => {
+          const val = Number(weightInput?.value);
+          addPlateWeight(val);
+          if (weightInput) weightInput.value = '';
         });
       }
 
-      if (langToggle) {
-        langToggle.addEventListener('click', () => {
-          setLanguage(lang === 'zh' ? 'en' : 'zh');
+      if (weightInput && addWeightBtn) {
+        weightInput.addEventListener('keydown', (e) => {
+          if (e.key !== 'Enter') return;
+          e.preventDefault();
+          addWeightBtn.click();
         });
       }
+
+      if (removeAllWeightsBtn) {
+        removeAllWeightsBtn.addEventListener('click', () => {
+          removeAllPlateWeights();
+        });
+      }
+
+      if (lowBatteryBtn) {
+        lowBatteryBtn.addEventListener('click', () => {
+          lowBatteryMode = !lowBatteryMode;
+          lowBatteryBtn.setAttribute('aria-pressed', lowBatteryMode ? 'true' : 'false');
+          applyBatteryModeVisual();
+        });
+      }
+
+      if (chargingBtn) {
+        chargingBtn.addEventListener('click', () => {
+          if (chargingMode) {
+            stopChargingMode();
+          } else {
+            startChargingMode();
+          }
+        });
+      }
+
 
       const rightBottom = document.querySelector('.hotspot[data-id="rightBottom"]');
       if (rightBottom) {
@@ -2376,9 +2816,11 @@
           e.preventDefault();
           didLongPress = false;
           isPressing = true;
+          if (!isPowerOn) return; // power-off state: no long-press required, short press on release powers on
           longPressTimer = setTimeout(() => {
             didLongPress = true;
             if (!isPowerOn) return;
+            stopChargingMode();
             isPowerOn = false;
             document.body.classList.add('powerOff');
           }, 1500);
@@ -2399,6 +2841,8 @@
             document.body.classList.add('lcdAllOn');
             setTimeout(() => {
               document.body.classList.remove('lcdAllOn');
+              // Power-on default: set current plate load as tare baseline so live starts from zero.
+              applyTareFromCurrentPlate();
               showLatestRecord();
               updateModeUI();
               applyUnitDisplay(units[unitIndex]);
@@ -2433,13 +2877,14 @@
 
       function recordBowlTare() {
         if (!isPowerOn || deleteMode || !recordMode) return;
-        if (rawWeightG === 0) return;
         if (currentBowlIndex >= 4) return;
         const nextIndex = currentBowlIndex + 1;
         bowls[nextIndex] = { tareWeight: rawWeightG, items: [] };
         currentBowlIndex = nextIndex;
         setActiveBowl(currentBowlIndex);
-        syncWeight(0);
+        clearRecDisplay();
+        // Keep new plate-based net logic: long-press tare sets current load as tare baseline.
+        applyTareFromCurrentPlate();
       }
 
       function recordIngredient() {
@@ -2460,7 +2905,8 @@
         currentViewIndex = records.length - 1;
         renderRecord(records[currentViewIndex], true);
         setActiveBowl(currentBowlIndex);
-        syncWeight(0);
+        // After recording current live/net weight, tare again so live returns to 0.
+        applyTareFromCurrentPlate();
       }
 
       const rightTop = document.querySelector('.hotspot[data-id="rightTop"]');
@@ -2477,9 +2923,10 @@
           longPressTimer = setTimeout(() => {
             didLongPress = true;
             if (recordMode) {
+              // Preserve V6 behavior: long-press TARE in record mode advances tare stage icon.
               recordBowlTare();
             } else {
-              syncWeight(0);
+              applyTareFromCurrentPlate();
             }
           }, 1500);
         };
@@ -2498,10 +2945,14 @@
           }
           if (!didLongPress) {
             if (recordMode) {
-              recordIngredient();
+              if (rawWeightG > 0) {
+                recordIngredient();
+              } else {
+                // Negative/zero net can be zeroed by short TARE, but must not be recorded.
+                applyTareFromCurrentPlate();
+              }
             } else {
-              // normal mode: tare zero without recording
-              syncWeight(0);
+              applyTareFromCurrentPlate();
             }
           }
         };
@@ -2608,9 +3059,11 @@
       document.getElementById('live_no')?.classList.remove('on');
       setIconOn('live_minus', false);
       clearRecDisplay();
-      setLanguage('zh');
+      renderPlateWeights();
+      applyBatteryModeVisual();
       updateModeUI();
-      syncWeight(0);
+      // Keep initial power-on behavior consistent with runtime power-on: live display starts from zero.
+      applyTareFromCurrentPlate();
     })();
   </script>
 </body>
