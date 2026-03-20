@@ -886,6 +886,7 @@
     .allOnDigits{ display: none; }
     body.lcdAllOn .allOnDigits{ display: flex; }
     body.lcdAllOn #live_weight{ display: none; }
+    body.lcdAllOn #live_dots .dot{ opacity: 1 !important; }
 
     /* charging mode: dim current display content, keep charging animation bright */
     body.chargingMode:not(.powerOff) .lcdSeg{
@@ -2235,9 +2236,8 @@
           return;
         }
 
-        // 0g baseline: only first(top) and last(bottom) dots on.
+        // 0g baseline: only first(top) dot on.
         liveDots[0].classList.add('on');
-        liveDots[dotCount - 1].classList.add('on');
 
         if (totalWeightG <= 0) return;
         if (totalWeightG >= LIVE_DOTS_FULL_SCALE_G) {
@@ -2246,12 +2246,12 @@
         }
 
         // Fill from bottom to top based on plate total weight (independent from live/net value).
-        const dynamicDotCount = Math.max(1, dotCount - 2);
+        const dynamicDotCount = Math.max(1, dotCount - 1); // all dots except the first baseline dot
         const gramsPerDot = LIVE_DOTS_FULL_SCALE_G / dynamicDotCount;
         const extraDots = Math.min(dynamicDotCount, Math.ceil(totalWeightG / gramsPerDot));
 
         for (let i = 0; i < extraDots; i++) {
-          const idx = (dotCount - 2) - i; // 14,13,12... (upward)
+          const idx = (dotCount - 1) - i; // 15,14,13... (upward)
           if (idx <= 0) break;
           liveDots[idx].classList.add('on');
         }
@@ -2881,6 +2881,9 @@
         const nextIndex = currentBowlIndex + 1;
         bowls[nextIndex] = { tareWeight: rawWeightG, items: [] };
         currentBowlIndex = nextIndex;
+        // Browsing anchor should move to the position after the latest record.
+        // This ensures "previous" from a newly switched bowl shows the real latest item.
+        currentViewIndex = records.length;
         setActiveBowl(currentBowlIndex);
         clearRecDisplay();
         // Keep new plate-based net logic: long-press tare sets current load as tare baseline.
@@ -3052,9 +3055,10 @@
         leftBottom.addEventListener('pointercancel', endPress);
       }
 
-      document.body.classList.remove('lcdAllOn', 'powerOff');
+      document.body.classList.remove('lcdAllOn', 'chargingMode');
+      document.body.classList.add('powerOff');
       deleteMode = false;
-      isPowerOn = true;
+      isPowerOn = false;
       document.getElementById('live_yes')?.classList.remove('on');
       document.getElementById('live_no')?.classList.remove('on');
       setIconOn('live_minus', false);
